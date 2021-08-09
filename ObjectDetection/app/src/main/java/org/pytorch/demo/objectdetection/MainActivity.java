@@ -6,6 +6,7 @@
 
 package org.pytorch.demo.objectdetection;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -20,6 +21,9 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -43,11 +47,20 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements Runnable {
+/*public String[] getAllImageNames() {
+
+        File folder = new File();
+        File[] listOfFiles = folder.listFiles();
+        return namesArray;
+        }*/
+public class MainActivity extends AppCompatActivity implements Runnable, LocationListener {
     private int mImageIndex = 0;
+    // Object Detection code
     private String[] mTestImages = {"test1.png", "test2.jpg", "test3.png"};
+    //private String[] mTestImages = {"test1.png", "test2.png", "test3.png"};
 
     private ImageView mImageView;
     private ResultView mResultView;
@@ -56,6 +69,10 @@ public class MainActivity extends AppCompatActivity implements Runnable {
     private Bitmap mBitmap = null;
     private Module mModule = null;
     private float mImgScaleX, mImgScaleY, mIvScaleX, mIvScaleY, mStartX, mStartY;
+    protected LocationManager locationManager;
+    protected String latitude, longitude;
+    String outputFile = "road-damage-details.txt";
+
 
     public static String assetFilePath(Context context, String assetName) throws IOException {
         File file = new File(context.getFilesDir(), assetName);
@@ -82,11 +99,19 @@ public class MainActivity extends AppCompatActivity implements Runnable {
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
+
         }
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, 1);
         }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+        }
+
+
+        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 100, 0, this);
 
         setContentView(R.layout.activity_main);
 
@@ -126,7 +151,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
             public void onClick(View v) {
                 mResultView.setVisibility(View.INVISIBLE);
 
-                final CharSequence[] options = { "Choose from Photos", "Take Picture", "Cancel" };
+                final CharSequence[] options = {"Choose from Photos", "Take Picture", "Cancel"};
                 AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
                 builder.setTitle("New Test Image");
 
@@ -136,12 +161,10 @@ public class MainActivity extends AppCompatActivity implements Runnable {
                         if (options[item].equals("Take Picture")) {
                             Intent takePicture = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
                             startActivityForResult(takePicture, 0);
-                        }
-                        else if (options[item].equals("Choose from Photos")) {
+                        } else if (options[item].equals("Choose from Photos")) {
                             Intent pickPhoto = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.INTERNAL_CONTENT_URI);
-                            startActivityForResult(pickPhoto , 1);
-                        }
-                        else if (options[item].equals("Cancel")) {
+                            startActivityForResult(pickPhoto, 1);
+                        } else if (options[item].equals("Cancel")) {
                             dialog.dismiss();
                         }
                     }
@@ -153,8 +176,8 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         final Button buttonLive = findViewById(R.id.liveButton);
         buttonLive.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-              final Intent intent = new Intent(MainActivity.this, ObjectDetectionActivity.class);
-              startActivity(intent);
+                final Intent intent = new Intent(MainActivity.this, ObjectDetectionActivity.class);
+                startActivity(intent);
             }
         });
 
@@ -166,14 +189,14 @@ public class MainActivity extends AppCompatActivity implements Runnable {
                 mProgressBar.setVisibility(ProgressBar.VISIBLE);
                 mButtonDetect.setText(getString(R.string.run_model));
 
-                mImgScaleX = (float)mBitmap.getWidth() / PrePostProcessor.mInputWidth;
-                mImgScaleY = (float)mBitmap.getHeight() / PrePostProcessor.mInputHeight;
+                mImgScaleX = (float) mBitmap.getWidth() / PrePostProcessor.mInputWidth;
+                mImgScaleY = (float) mBitmap.getHeight() / PrePostProcessor.mInputHeight;
 
-                mIvScaleX = (mBitmap.getWidth() > mBitmap.getHeight() ? (float)mImageView.getWidth() / mBitmap.getWidth() : (float)mImageView.getHeight() / mBitmap.getHeight());
-                mIvScaleY  = (mBitmap.getHeight() > mBitmap.getWidth() ? (float)mImageView.getHeight() / mBitmap.getHeight() : (float)mImageView.getWidth() / mBitmap.getWidth());
+                mIvScaleX = (mBitmap.getWidth() > mBitmap.getHeight() ? (float) mImageView.getWidth() / mBitmap.getWidth() : (float) mImageView.getHeight() / mBitmap.getHeight());
+                mIvScaleY = (mBitmap.getHeight() > mBitmap.getWidth() ? (float) mImageView.getHeight() / mBitmap.getHeight() : (float) mImageView.getWidth() / mBitmap.getWidth());
 
-                mStartX = (mImageView.getWidth() - mIvScaleX * mBitmap.getWidth())/2;
-                mStartY = (mImageView.getHeight() -  mIvScaleY * mBitmap.getHeight())/2;
+                mStartX = (mImageView.getWidth() - mIvScaleX * mBitmap.getWidth()) / 2;
+                mStartY = (mImageView.getHeight() - mIvScaleY * mBitmap.getHeight()) / 2;
 
                 Thread thread = new Thread(MainActivity.this);
                 thread.start();
@@ -181,7 +204,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         });
 
         try {
-            mModule = LiteModuleLoader.load(MainActivity.assetFilePath(getApplicationContext(), "yolov5s.torchscript.ptl"));
+            mModule = LiteModuleLoader.load(MainActivity.assetFilePath(getApplicationContext(), "best_lite.torchscript_5Aug_100epoch.ptl"));
             BufferedReader br = new BufferedReader(new InputStreamReader(getAssets().open("classes.txt")));
             String line;
             List<String> classes = new ArrayList<>();
@@ -239,11 +262,19 @@ public class MainActivity extends AppCompatActivity implements Runnable {
     public void run() {
         Bitmap resizedBitmap = Bitmap.createScaledBitmap(mBitmap, PrePostProcessor.mInputWidth, PrePostProcessor.mInputHeight, true);
         final Tensor inputTensor = TensorImageUtils.bitmapToFloat32Tensor(resizedBitmap, PrePostProcessor.NO_MEAN_RGB, PrePostProcessor.NO_STD_RGB);
+        long before = new Date().getTime();
         IValue[] outputTuple = mModule.forward(IValue.from(inputTensor)).toTuple();
+        long after = new Date().getTime();
+        System.out.println(before + " - " + after + " - " + (after - before));
         final Tensor outputTensor = outputTuple[0].toTensor();
         final float[] outputs = outputTensor.getDataAsFloatArray();
-        final ArrayList<Result> results =  PrePostProcessor.outputsToNMSPredictions(outputs, mImgScaleX, mImgScaleY, mIvScaleX, mIvScaleY, mStartX, mStartY);
 
+        final ArrayList<Result> results = PrePostProcessor.outputsToNMSPredictions(outputs, mImgScaleX, mImgScaleY, mIvScaleX, mIvScaleY, mStartX, mStartY);
+        for (Result eachPrediction : results) {
+            writeToFile("Time: "+ new Date().toString()+" Geo: (" + latitude + ", " + longitude + " ), " + "Class: " + PrePostProcessor.mClasses[eachPrediction.classIndex] +
+                    " Score: " + eachPrediction.score+"\n");
+        }
+        System.out.println(before + " - " + after + " - " + (after - before));
         runOnUiThread(() -> {
             mButtonDetect.setEnabled(true);
             mButtonDetect.setText(getString(R.string.detect));
@@ -252,5 +283,45 @@ public class MainActivity extends AppCompatActivity implements Runnable {
             mResultView.invalidate();
             mResultView.setVisibility(View.VISIBLE);
         });
+    }
+
+    private void writeToFile(String data) {
+        Context context = this.getApplicationContext();
+        FileOutputStream outputStream;
+
+        File file = new File(context.getFilesDir(), outputFile);
+
+        try {
+            if (file.exists() && file.length() > 0) {
+                outputStream = openFileOutput(outputFile, Context.MODE_APPEND);
+
+            } else {
+                outputStream = openFileOutput(outputFile, Context.MODE_PRIVATE);
+            }
+            outputStream.write(data.getBytes());
+            outputStream.close();
+        } catch (IOException e) {
+            Log.e("Exception", "File write failed: " + e.toString());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void onLocationChanged(@NonNull Location location) {
+
+        latitude = Double.toString(location.getLatitude());
+        longitude = Double.toString(location.getLongitude());
+        System.out.println(latitude + " - " + longitude);
+    }
+
+    @Override
+    public void onProviderDisabled(String provider) {
+        Log.d("Latitude", "disable");
+    }
+
+    @Override
+    public void onProviderEnabled(String provider) {
+        Log.d("Latitude", "enable");
     }
 }
