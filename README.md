@@ -1,50 +1,14 @@
-# PyTorch Android Examples
+# Road Warrior Mobile Android Application
 
-A list of Android demo apps built on the powerful [PyTorch Mobile](https://pytorch.org/mobile) platform.
+### Road Warrior
 
-### HelloWorld
+This project is envisioned to run on Car Dashboard, Camera mounted vehicles with clear visibility for the app to view the road. 
+This App runs a Live Camera and behind the scenes analyze the feed with our custom made model that detects Potholes, Cracks, Uneven, Abnormal road conditions and sends the required non user specific data to Road Warriror Servers. The data contains UserID, RoadScreenshot, Geo Location, Time. Such data will be shared on open domain for viewers and volunteers to give a supporting hand try to do their best in fixing the problem.
 
-[HelloWorld](https://github.com/pytorch/android-demo-app/tree/master/HelloWorldApp) is a simple image classification application that demonstrates how to use the PyTorch Android API with the latest PyTorch 1.8, MobileNet v3, and [MemoryFormat.CHANNELS_LAST](https://pytorch.org/tutorials/intermediate/memory_format_tutorial.html).
+#### Android Mobile Application Template Source: https://github.com/pytorch/android-demo-app
 
-### PyTorch demo app
 
-The [PyTorch demo app](https://github.com/pytorch/android-demo-app/tree/master/PyTorchDemoApp) is a full-fledged app that contains two showcases. A camera app that runs a quantized model to classifiy images in real time. And a text-based app that uses a text classification model to predict the topic from the input text.
 
-### D2go
-
-[D2Go](https://github.com/pytorch/android-demo-app/tree/master/D2Go) demonstrates a Python script that creates the much lighter and much faster Facebook [D2Go](https://github.com/facebookresearch/d2go) model that is powered by PyTorch 1.8, torchvision 0.9, and Detectron2 with built-in SOTA networks for mobile, and an Android app that uses it to detect objects from pictures in your photos, taken with camera, or with live camera. This demo app also shows how to use the native pre-built torchvision-ops library.
-
-### Image Segmentation
-
-[Image Segmentation](https://github.com/pytorch/android-demo-app/tree/master/ImageSegmentation) demonstrates a Python script that converts the PyTorch [DeepLabV3](https://pytorch.org/hub/pytorch_vision_deeplabv3_resnet101/) model and an Android app that uses the model to segment images.
-
-### Object Detection
-
-[Object Detection](https://github.com/pytorch/android-demo-app/tree/master/ObjectDetection) demonstrates how to convert the popular [YOLOv5](https://pytorch.org/hub/ultralytics_yolov5/) model and use it in an Android app that detects objects from pictures in your photos, taken with camera, or with live camera.
-
-### Neural Machine Translation
-
-[Neural Machine Translation](https://github.com/pytorch/android-demo-app/tree/master/Seq2SeqNMT) demonstrates how to convert a sequence-to-sequence neural machine translation model trained with the code in the [PyTorch NMT tutorial](https://pytorch.org/tutorials/intermediate/seq2seq_translation_tutorial.html) and use the model in an Android app to do French-English translation.
-
-### Question Answering
-
-[Question Answering](https://github.com/pytorch/android-demo-app/tree/master/QuestionAnswering) demonstrates how to convert a powerful transformer QA model and use the model in an Android app to answer questions about PyTorch Mobile and more.
-
-### Speech recognition
-
-[Speech Recognition](https://github.com/pytorch/android-demo-app/tree/master/SpeechRecognition) demonstrates how to convert Facebook AI's wav2vec 2.0, one of the leading models in speech recognition, to TorchScript and how to use the scripted model in an Android app to perform speech recognition.
-
-### Vision Transformer
-
-[Vision Transformer](https://github.com/pytorch/android-demo-app/tree/master/ViT4MNIST) demonstrates how to use Facebook's latest Vision Transformer [DeiT](https://github.com/facebookresearch/deit) model to do image classification, and how convert another Vision Transformer model and use it in an Android app to perform handwritten digit recognition.
-
-### Speech recognition
-
-[Speech Recognition](https://github.com/pytorch/android-demo-app/tree/master/SpeechRecognition) demonstrates how to convert Facebook AI's wav2vec 2.0, one of the leading models in speech recognition, to TorchScript and how to use the scripted model in an Android app to perform speech recognition.
-
-### Video Classification
-
-[TorchVideo](https://github.com/pytorch/android-demo-app/tree/master/TorchVideo) demonstrates how to use a pre-trained video classification model, available at the newly released [PyTorchVideo](https://github.com/facebookresearch/pytorchvideo), on Android to see video classification results, updated per second while the video plays, on tested videos, videos from the Photos library, or even real-time videos.
 
 
 ## LICENSE
