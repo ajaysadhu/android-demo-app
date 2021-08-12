@@ -26,12 +26,15 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import org.pytorch.IValue;
 import org.pytorch.LiteModuleLoader;
@@ -42,13 +45,21 @@ import org.pytorch.torchvision.TensorImageUtils;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.StringJoiner;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 
 /*public String[] getAllImageNames() {
 
@@ -56,22 +67,23 @@ import java.util.List;
         File[] listOfFiles = folder.listFiles();
         return namesArray;
         }*/
-public class MainActivity extends AppCompatActivity implements Runnable, LocationListener {
+public class MainActivity extends AppCompatActivity implements Runnable {
     private int mImageIndex = 0;
     // Object Detection code
     private String[] mTestImages = {"test1.png", "test2.jpg", "test3.png"};
     //private String[] mTestImages = {"test1.png", "test2.png", "test3.png"};
 
+
     private ImageView mImageView;
     private ResultView mResultView;
+    private TextView mLocationView;
     private Button mButtonDetect;
     private ProgressBar mProgressBar;
     private Bitmap mBitmap = null;
     private Module mModule = null;
     private float mImgScaleX, mImgScaleY, mIvScaleX, mIvScaleY, mStartX, mStartY;
-    protected LocationManager locationManager;
-    protected String latitude, longitude;
-    String outputFile = "road-damage-details.txt";
+
+
 
 
     public static String assetFilePath(Context context, String assetName) throws IOException {
@@ -99,20 +111,10 @@ public class MainActivity extends AppCompatActivity implements Runnable, Locatio
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
-
         }
-
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, 1);
         }
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
-        }
-
-
-        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 100, 0, this);
-
         setContentView(R.layout.activity_main);
 
         try {
@@ -126,6 +128,8 @@ public class MainActivity extends AppCompatActivity implements Runnable, Locatio
         mImageView.setImageBitmap(mBitmap);
         mResultView = findViewById(R.id.resultView);
         mResultView.setVisibility(View.INVISIBLE);
+        mLocationView = findViewById(R.id.location);
+
 
         final Button buttonTest = findViewById(R.id.testButton);
         buttonTest.setText(("Test Image 1/3"));
@@ -203,6 +207,14 @@ public class MainActivity extends AppCompatActivity implements Runnable, Locatio
             }
         });
 
+        final Button buttonViewFile = findViewById(R.id.viewfile);
+        buttonViewFile.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                openLogView();
+            }
+        });
+
         try {
             mModule = LiteModuleLoader.load(MainActivity.assetFilePath(getApplicationContext(), "best_lite.torchscript_5Aug_100epoch.ptl"));
             BufferedReader br = new BufferedReader(new InputStreamReader(getAssets().open("classes.txt")));
@@ -217,6 +229,12 @@ public class MainActivity extends AppCompatActivity implements Runnable, Locatio
             Log.e("Object Detection", "Error reading assets", e);
             finish();
         }
+
+    }
+
+    public void openLogView(){
+        Intent intent = new Intent(this, ViewLogFileActivity.class);
+        startActivity(intent);
     }
 
     @Override
@@ -270,10 +288,7 @@ public class MainActivity extends AppCompatActivity implements Runnable, Locatio
         final float[] outputs = outputTensor.getDataAsFloatArray();
 
         final ArrayList<Result> results = PrePostProcessor.outputsToNMSPredictions(outputs, mImgScaleX, mImgScaleY, mIvScaleX, mIvScaleY, mStartX, mStartY);
-        for (Result eachPrediction : results) {
-            writeToFile("Time: "+ new Date().toString()+" Geo: (" + latitude + ", " + longitude + " ), " + "Class: " + PrePostProcessor.mClasses[eachPrediction.classIndex] +
-                    " Score: " + eachPrediction.score+"\n");
-        }
+
         System.out.println(before + " - " + after + " - " + (after - before));
         runOnUiThread(() -> {
             mButtonDetect.setEnabled(true);
@@ -285,43 +300,35 @@ public class MainActivity extends AppCompatActivity implements Runnable, Locatio
         });
     }
 
-    private void writeToFile(String data) {
-        Context context = this.getApplicationContext();
-        FileOutputStream outputStream;
 
-        File file = new File(context.getFilesDir(), outputFile);
 
-        try {
-            if (file.exists() && file.length() > 0) {
-                outputStream = openFileOutput(outputFile, Context.MODE_APPEND);
 
-            } else {
-                outputStream = openFileOutput(outputFile, Context.MODE_PRIVATE);
+/*
+    Handler handler = new Handler();
+    Runnable runnable;
+    int delay = 3*1000; //Delay for 10 seconds.  One second = 1000 milliseconds.
+
+    @Override
+    protected void onResume() {
+    Log.i("Delay Runner", LocalDateTime.now().toString());
+        handler.postDelayed(runnable = () -> {
+            if(threadSafeLoggedData.size() > 10) {
+                List<String> subList = threadSafeLoggedData.subList(0,9);
+                threadSafeLoggedData.subList(0,9).clear();
+                System.out.println("Writing to File, stay Tuned");
+                writeToFile( subList.stream().collect(Collectors.joining("\n")).toString(), getApplicationContext());
             }
-            outputStream.write(data.getBytes());
-            outputStream.close();
-        } catch (IOException e) {
-            Log.e("Exception", "File write failed: " + e.toString());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+            handler.postDelayed(runnable, delay);
+        }, delay);
+        super.onResume();
     }
 
     @Override
-    public void onLocationChanged(@NonNull Location location) {
-
-        latitude = Double.toString(location.getLatitude());
-        longitude = Double.toString(location.getLongitude());
-        System.out.println(latitude + " - " + longitude);
+    protected void onPause() {
+        handler.removeCallbacks(runnable); //stop handler when activity not visible
+        super.onPause();
     }
 
-    @Override
-    public void onProviderDisabled(String provider) {
-        Log.d("Latitude", "disable");
-    }
-
-    @Override
-    public void onProviderEnabled(String provider) {
-        Log.d("Latitude", "enable");
-    }
+ */
 }
+

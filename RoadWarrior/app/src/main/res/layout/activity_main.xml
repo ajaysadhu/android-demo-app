@@ -25,6 +25,7 @@
         android:layout_marginTop="60dp"
         app:layout_constraintDimensionRatio="1:1"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -62,7 +63,8 @@
         app:layout_constraintEnd_toStartOf="@+id/selectButton"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/detectButton" />
+        app:layout_constraintTop_toBottomOf="@+id/detectButton"
+        tools:ignore="SpeakableTextPresentCheck" />
 
     <Button
         android:id="@+id/selectButton"
@@ -86,6 +88,18 @@
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/selectButton"
         app:layout_constraintTop_toTopOf="@+id/selectButton" />
+
+    <Button
+        android:id="@+id/viewfile"
+        android:layout_width="100dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:text="@string/viewfile"
+        android:textAllCaps="false"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.501"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/selectButton" />
 
     <androidx.constraintlayout.widget.Barrier
         android:id="@+id/barrier"

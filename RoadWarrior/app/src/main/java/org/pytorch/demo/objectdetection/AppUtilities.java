@@ -7,6 +7,8 @@ import com.google.android.gms.common.GoogleApiAvailability;
 
 public class AppUtilities {
 
+    public static String OUTPUTFILE = "road-damage-details.txt";
+
     public static boolean verifyGoogleAPIAvailable(Context context) throws Exception {
 
         if( GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context) == ConnectionResult.SUCCESS) {
@@ -16,5 +18,6 @@ public class AppUtilities {
         }
         return  false;
     }
+
 
 }
