@@ -124,7 +124,7 @@ public class ObjectDetectionActivity extends AbstractCameraXActivity<ObjectDetec
 
         try {
             if (mModule == null) {
-                mModule = LiteModuleLoader.load(MainActivity.assetFilePath(getApplicationContext(), "best_lite.torchscript_5Aug_100epoch.ptl"));
+                mModule = LiteModuleLoader.load(MainActivity.assetFilePath(getApplicationContext(), AppUtilities.MODEL_NAME));
             }
         } catch (IOException e) {
             Log.e("Object Detection", "Error reading assets", e);
@@ -157,7 +157,7 @@ public class ObjectDetectionActivity extends AbstractCameraXActivity<ObjectDetec
             }
 
         Log.d("Damage Detected", "SIZE: " + threadSafeLoggedData.size());
-        if(threadSafeLoggedData.size() > 10) {
+        if(threadSafeLoggedData.size() > AppUtilities.LOG_OUTPUT_FREQ) {
             threadSafeLoggedData.drainTo(dataPoints);
         new Thread(() -> {
 
